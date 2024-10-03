@@ -12,8 +12,8 @@ This project aims to predict the future stock prices of NVIDIA using historical 
 - Implement a Linear Regression model for price prediction
 - Implement an LSTM model for price prediction
 - Visualize actual vs. predicted prices
-- Calculate and display Mean Squared Error (MSE), Mean Absolute Error (MAE) and R-squared value for linear regression model evaluation 
-- Use RSI, 30-day Moving Average and historical prices to help predict fucture prices in linear regression model
+- Calculate and display Mean Squared Error (MSE), Mean Absolute Error (MAE) and R-squared value for model evaluation 
+- Use RSI, 30-day Moving Average and historical prices to help predict prices 
 
 ## Installation
 
