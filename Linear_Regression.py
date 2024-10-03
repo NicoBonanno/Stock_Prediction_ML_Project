@@ -4,46 +4,61 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+import numpy as np
 
-#Import and download Nvidia stock data since 2010 into CSV file
+# Import and download Nvidia stock data since 2010 into CSV file
 data = yf.download('NVDA', start='2010-01-01', end='2024-12-31')
 data.to_csv('nvidia_stock_data.csv')
 df = pd.read_csv('nvidia_stock_data.csv')
 print(df.head())
 
-#Drop rows with missing values
+# Drop rows with missing values
 data.dropna(inplace=True)
 
-#Technical Indicators
-data['MA30'] = data['Close'].rolling(window=30).mean() #30 day moving average
+# Technical Indicators
+data['MA30'] = data['Close'].rolling(window=30).mean()  # 30-day moving average
 data['Prev_Close'] = data['Close'].shift(1)
 
-#Drop rows with NaN values
+# RSI calculation
+delta = data['Close'].diff(1)
+gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+rs = gain / loss
+data['RSI'] = 100 - (100 / (1 + rs))
+
+# Drop rows with NaN values (due to rolling window)
 data.dropna(inplace=True)
 
-#Normalize data
+# Normalize data
 scaler = MinMaxScaler()
-data[['MA30', 'Prev_Close']] = scaler.fit_transform(data[['MA30', 'Prev_Close']])
+data[['MA30', 'Prev_Close', 'RSI']] = scaler.fit_transform(data[['MA30', 'Prev_Close', 'RSI']])
 
-#Define Features and Target
-x = data[['MA30', 'Prev_Close']]
+# Define Features and Target
+x = data[['MA30', 'Prev_Close', 'RSI']]
 y = data[['Close']]
 
-#Split data
+# Split data
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, shuffle=False)
 
-#Plotting after preprocessing
+# Plotting the historical prices after preprocessing
 data['Close'].plot(title='Nvidia Stock Price After Preprocessing')
 plt.show()
 
-#Train Linear Regression
+# Train Linear Regression
 lr_model = LinearRegression()
 lr_model.fit(x_train, y_train)
 lr_predictions = lr_model.predict(x_test)
-lr_mse = mean_squared_error(y_test, lr_predictions)
-print(f"Linear Regression MSE: {lr_mse}")
 
+# Calculate metrics
+lr_mse = mean_squared_error(y_test, lr_predictions)
+lr_r2 = r2_score(y_test, lr_predictions)
+lr_mae = mean_absolute_error(y_test, lr_predictions)
+print(f"Linear Regression MSE: {lr_mse}")
+print(f"Linear Regression R-squared: {lr_r2}")
+print(f"Linear Regression MAE: {lr_mae}")
+
+# Convert y_test to a pandas series for plotting
 if isinstance(y_test, pd.DataFrame):
     y_test = y_test.squeeze()
 elif y_test.ndim == 2:
@@ -51,10 +66,12 @@ elif y_test.ndim == 2:
 
 y_test_series = pd.Series(y_test.values, index=y_test.index)
 lr_predictions_series = pd.Series(lr_predictions.flatten(), index=y_test.index)
+
+# Plot actual vs predicted prices
 plt.figure(figsize=(14, 7))
 plt.plot(y_test_series.index, y_test_series, label='Actual Prices', color='blue')
 plt.plot(lr_predictions_series.index, lr_predictions_series, label='Linear Regression', color='red')
-plt.title('Linear Regression pRedictions vs Actual Prices')
+plt.title('Linear Regression Predictions vs Actual Prices')
 plt.xlabel('Date')
 plt.ylabel('Price')
 plt.legend()
@@ -87,8 +104,11 @@ for i in range(30):
         recent_data = pd.concat([recent_data, new_row])
         ma30 = recent_data['Close'].rolling(window=30).mean().values[-1]
 
+    # RSI for future predictions (assumed static in this basic example)
+    rsi = data['RSI'].iloc[-1]
+
     # Create feature set for prediction
-    feature_array = scaler.transform([[ma30, prev_close]])  # Normalize the features
+    feature_array = scaler.transform([[ma30, prev_close, rsi]])  # Normalize the features
 
     # Predict the future price
     prediction = lr_model.predict(feature_array)[0][0]  # Predict and get the value
