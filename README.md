@@ -4,7 +4,7 @@ This repository contains two different models for predicting NVIDIA (NVDA) stock
 
 ## Overview
 
-This project aims to predict the future stock prices of NVIDIA using historical stock data. The first model implements a simple linear regression approach, while the second model leverages the LSTM architecture for time series forecasting.
+This project aims to predict the future stock prices of NVIDIA using historical stock data. The first model implements a simple linear regression approach, while the second model leverages the LSTM architecture for time series forecasting. Both models are using historical prices and moving average as features to learn and model the historical prices.
 
 ### Features
 
