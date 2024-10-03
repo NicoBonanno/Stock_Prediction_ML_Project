@@ -4,8 +4,10 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 from keras.models import Sequential
-from keras.layers import LSTM, Dense
-from sklearn.metrics import mean_squared_error
+from keras.layers import LSTM, Dense, Dropout
+from keras.optimizers import Adam
+from keras.callbacks import ReduceLROnPlateau
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 # Download Nvidia stock data and save to CSV
 data = yf.download('NVDA', start='2010-01-01', end='2024-12-31')
@@ -50,14 +52,21 @@ y_train, y_test = y_train[:split_index], y_train[split_index:]
 
 # Build the LSTM model
 lstm_model = Sequential()
-lstm_model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
-lstm_model.add(LSTM(units=50))
+lstm_model.add(LSTM(units=100, return_sequences=True, input_shape=(x_train.shape[1], x_train.shape[2])))
+lstm_model.add(Dropout(0.2))  # Add dropout to reduce overfitting
+lstm_model.add(LSTM(units=100))
+lstm_model.add(Dropout(0.2))
 lstm_model.add(Dense(1))
 
-lstm_model.compile(optimizer='adam', loss='mean_squared_error')
+# Compile the model with Adam optimizer and learning rate scheduler
+optimizer = Adam(learning_rate=0.001)
+lstm_model.compile(optimizer=optimizer, loss='mean_squared_error')
+
+# Implement learning rate scheduler
+reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, patience=3, min_lr=0.00001, verbose=1)
 
 # Train the LSTM model
-lstm_model.fit(x_train, y_train, epochs=10, batch_size=32)
+history = lstm_model.fit(x_train, y_train, epochs=20, batch_size=32, callbacks=[reduce_lr])
 
 # Make predictions
 lstm_predictions = lstm_model.predict(x_test)
@@ -68,7 +77,12 @@ lstm_predictions_rescaled = scaler.inverse_transform(np.concatenate([x_test[:, -
 
 # Evaluate the model
 lstm_mse = mean_squared_error(y_test_rescaled, lstm_predictions_rescaled)
+lstm_mae = mean_absolute_error(y_test_rescaled, lstm_predictions_rescaled)
+lstm_r2 = r2_score(y_test_rescaled, lstm_predictions_rescaled)
+
 print(f"LSTM Mean Squared Error: {lstm_mse}")
+print(f"LSTM Mean Absolute Error: {lstm_mae}")
+print(f"LSTM R-squared Value: {lstm_r2}")
 
 # Plot actual vs predicted prices
 plt.figure(figsize=(14, 7))
@@ -77,5 +91,14 @@ plt.plot(lstm_predictions_rescaled, label='LSTM Predicted Prices', color='orange
 plt.title('LSTM Predictions vs Actual Prices')
 plt.xlabel('Days')
 plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+
+# Plot loss over time
+plt.figure(figsize=(10, 6))
+plt.plot(history.history['loss'], label='Training Loss')
+plt.title('Training Loss Over Time')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
 plt.legend()
 plt.show()
