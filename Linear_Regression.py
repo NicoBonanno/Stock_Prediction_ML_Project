@@ -5,9 +5,6 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-#from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-
 
 #Import and download Nvidia stock data since 2010 into CSV file
 data = yf.download('NVDA', start='2010-01-01', end='2024-12-31')
@@ -63,23 +60,6 @@ plt.ylabel('Price')
 plt.legend()
 plt.show()
 
-
-#Train LSTM
-#lstm_model = Sequential()
-#lstm_model.add(LSTM(50, activation='relu', input_shape=(x_train.shape[1], 1)))
-#lstm_model.add(Dense(1))
-#lstm_model.compile(optimizer='adam', loss='mse')
-#lstm_model.fit(x_train, y_train, epochs=10, batch_size=1, verbose=2)
-#lstm_predictions = lstm_model.predict(x_test)
-
-#Evaluate LSTM
-#lstm_mse = mean_squared_error(y_test, lstm_predictions)
-#print(f"LSTM MSE: {lstm_mse}")
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
 # 1. Obtain the most recent data from your dataset
 recent_data = data.iloc[-30:].copy()  # Get the last 30 rows of data to calculate MA30
 
@@ -132,7 +112,3 @@ plt.xlabel('Date')
 plt.ylabel('Price')
 plt.legend()
 plt.show()
-
-
-
-
